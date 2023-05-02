@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ObjectController : MonoBehaviour
 {
@@ -30,6 +31,19 @@ public class ObjectController : MonoBehaviour
 
         cam = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
         player = GameObject.FindGameObjectWithTag("Player");
+
+        var objectRenderer = gameObject.GetComponent<Renderer>();
+
+        int seed = SceneManager.GetActiveScene().buildIndex;
+
+        System.Random random = new System.Random(seed.GetHashCode());
+        var initialColor = new Color(
+            (float)random.Next(0, 255),
+            (float)random.Next(0, 255),
+            (float)random.Next(0, 255)
+            );
+        Color.RGBToHSV(initialColor,out float H, out float S, out float V);
+        objectRenderer.material.SetColor("objectColor", Random.ColorHSV(H,H+0.2f,0.9f,1f,0.5f,1f));
     }
 
     private void Update()
@@ -39,11 +53,11 @@ public class ObjectController : MonoBehaviour
         {
             ChangeToMain();
         }
-        else if (camValue == 1 || camValue == 2)
+        else if (camValue == 1)
         {
             ChangeToSide();
         }
-        else if (camValue == 3)
+        else if (camValue == 2)
         {
             ChangeToTop();
         }
@@ -56,23 +70,16 @@ public class ObjectController : MonoBehaviour
 
     public void ChangeToSide()
     {
-        if (camValue == 1)
-        {
-            offset = Vector3.zero;
-        }
-        else
-        {
-            Debug.Log("Called");
-            offset = offsetSide - offsetTop;
-        }
-        tempPositionsSide = new Vector3(0, tempPositionsSide.y, tempPositionsSide.z);
+        
+        offset = offsetSide - offsetTop;
+
         transform.position = tempPositionsSide;
     }
 
     public void ChangeToTop()
     {
         offset = offsetTop;
-        tempPositionsTop = new Vector3(tempPositionsTop.x, 0, tempPositionsTop.z);
+
         transform.position = tempPositionsTop;
     }
 

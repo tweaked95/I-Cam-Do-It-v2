@@ -40,7 +40,6 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Tab))
         {
-            Debug.Log("Tab is Pressed");
             if (!valueChanging)
             {
                 valueChanging = true;
@@ -87,12 +86,12 @@ public class PlayerController : MonoBehaviour
             MainCam();
         }
 
-        else if (camValue == 1 || camValue == 2)
+        else if (camValue == 1)
         {
             SideCam();
         }
 
-        else if (camValue == 3)
+        else if (camValue == 2)
         {
             TopCam();
         }
