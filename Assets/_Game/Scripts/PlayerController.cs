@@ -11,7 +11,6 @@ public class PlayerController : MonoBehaviour
     public static int lives;
 
     public Camera cam;
-    public GameObject youWinScreen;
     public SceneController sceneCont;
 
     CamController camController;
@@ -132,9 +131,7 @@ public class PlayerController : MonoBehaviour
         if (!collision.gameObject.CompareTag("FinalPickup"))
             return;
 
-        if (youWinScreen != null)
-            youWinScreen.SetActive(true);
-
+        collision.gameObject.SetActive(false);
         sceneCont.ChangeScene();
         transform.position = new Vector3(0f, 1f, 0f);
     }

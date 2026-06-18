@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneController : MonoBehaviour
@@ -8,43 +6,59 @@ public class SceneController : MonoBehaviour
     public GameObject[] savedObjects;
     public GameObject winScreen;
 
-    int sceneCounter;
-    private void Awake()
+    static readonly string[] LevelOrder = { "First", "Second", "Third" };
+
+    bool isTransitioning;
+
+    void Awake()
     {
         foreach (GameObject obj in savedObjects)
-        {
             DontDestroyOnLoad(obj);
-        }
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    private void Start()
+    void OnDestroy()
     {
-        sceneCounter = 1;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void Update()
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        isTransitioning = false;
+    }
+
+    void Update()
     {
         Scene activeScene = SceneManager.GetActiveScene();
         if (activeScene.name == "EndGame" || activeScene.name == "WinScreen")
         {
             foreach (GameObject obj in savedObjects)
-            {
                 Destroy(obj);
-            }
         }
     }
 
     public void ChangeScene()
     {
-        print(sceneCounter);
-        sceneCounter++;
-        if (sceneCounter == 5)
+        if (isTransitioning)
+            return;
+
+        string currentScene = SceneManager.GetActiveScene().name;
+        int currentIndex = System.Array.IndexOf(LevelOrder, currentScene);
+        if (currentIndex < 0)
+            return;
+
+        isTransitioning = true;
+
+        if (currentIndex >= LevelOrder.Length - 1)
         {
-            print("failed");
+            SceneManager.LoadScene("WinScreen");
+            return;
         }
-        else
-        {
-            SceneManager.LoadScene(sceneCounter);
-        }
+
+        if (winScreen != null)
+            winScreen.SetActive(false);
+
+        SceneManager.LoadScene(LevelOrder[currentIndex + 1]);
     }
 }
