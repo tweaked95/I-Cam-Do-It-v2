@@ -6,7 +6,7 @@ public class PlayerController : MonoBehaviour
 {
     public float moveSpeed;
     public float rotationSpeed;
-    [SerializeField] float switchCooldown = 1f;
+    [SerializeField] float switchCooldown = 0.5f;
 
     public static int lives;
 
