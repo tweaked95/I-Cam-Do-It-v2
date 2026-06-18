@@ -17,7 +17,6 @@ public class MainMenuImage : MonoBehaviour
             Vector3 direction = hitpoint - transform.position;
 
             float signedAngle = Vector3.SignedAngle(Vector3.left, direction, Vector3.forward);
-            Debug.Log(signedAngle);
             signedAngle = Mathf.Clamp(signedAngle, -30, 30);
             transform.rotation = Quaternion.Euler(signedAngle, -90, 0);
         }

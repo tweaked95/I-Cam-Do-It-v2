@@ -20,9 +20,7 @@ public class ParticleSystemController : MonoBehaviour
             );
 
         var particleSystemMain = particleSystem.main;
-        Debug.Log(initialColor);
         particleSystemMain.startColor = new ParticleSystem.MinMaxGradient(initialColor);
-        Debug.Log("PS Start Color after changing : " + particleSystemMain.startColor.color);
     }
 
     // Update is called once per frame

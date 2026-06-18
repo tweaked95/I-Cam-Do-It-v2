@@ -43,7 +43,6 @@ public class PlayerController : MonoBehaviour
             if (!valueChanging)
             {
                 valueChanging = true;
-                Debug.Log("Adding Offset " + offsetObject.GetComponent<ObjectController>().offset + " of " + offsetObject.name);
                 transform.position += offsetObject.GetComponent<ObjectController>().offset;
                 cam.GetComponent<CamController>().currentCamera++;
                 StartCoroutine("ChangingValue");
@@ -59,7 +58,6 @@ public class PlayerController : MonoBehaviour
             {
                 transform.position = Vector3.zero + new Vector3(0, 3, 0);
                 lives--;
-                Debug.Log(lives);
             }
 
             else if (hit.collider.gameObject.CompareTag("Ground"))

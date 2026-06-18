@@ -36,6 +36,7 @@ public class SceneController : MonoBehaviour
 
     public void ChangeScene()
     {
+        print(sceneCounter);
         sceneCounter++;
         if (sceneCounter == 5)
         {
