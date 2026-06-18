@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -7,167 +6,136 @@ public class PlayerController : MonoBehaviour
 {
     public float moveSpeed;
     public float rotationSpeed;
+    [SerializeField] float switchCooldown = 1f;
+
     public static int lives;
 
     public Camera cam;
     public GameObject youWinScreen;
     public SceneController sceneCont;
 
-    Transform relativeTransform;
-    [SerializeField]
-    GameObject[] groundElements;
+    CamController camController;
+    Rigidbody rb;
 
-    int camValue;
     RaycastHit hit;
-    bool valueChanging = false;
-
-    Vector3 localMoveInput;
-    Vector3 rightWorldMovement;
-    Vector3 forwardWorldMovement;
-    Vector3 moveDirection;
-
+    bool valueChanging;
+    Vector2 moveInput;
     GameObject offsetObject;
 
-
-    private void Start()
+    void Start()
     {
-        groundElements = GameObject.FindGameObjectsWithTag("Ground");
+        camController = cam.GetComponent<CamController>();
+        rb = GetComponent<Rigidbody>();
+
         lives = 3;
         Cursor.visible = false;
     }
 
-    private void Update()
+    void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            if (!valueChanging)
-            {
-                valueChanging = true;
-                transform.position += offsetObject.GetComponent<ObjectController>().offset;
-                cam.GetComponent<CamController>().currentCamera++;
-                StartCoroutine("ChangingValue");
+        moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
-            }
-        }
+        if (Input.GetKeyDown(KeyCode.Tab) && !valueChanging)
+            TrySwitchCamera();
     }
+
     void FixedUpdate()
     {
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, 5))
-        {
-            if (hit.collider.gameObject.CompareTag("KillVolume"))
-            {
-                transform.position = Vector3.zero + new Vector3(0, 3, 0);
-                lives--;
-            }
-
-            else if (hit.collider.gameObject.CompareTag("Ground"))
-            {
-                offsetObject = hit.collider.gameObject;
-            }
-
-            else if ((hit.collider.gameObject.CompareTag("FinalPickup")))
-            {
-                youWinScreen.SetActive(true);
-            }
-        }
-
+        GroundCheck();
         Move();
-
         DeathCheck();
+    }
+
+    void TrySwitchCamera()
+    {
+        if (offsetObject == null || !offsetObject.CompareTag("Ground"))
+            return;
+
+        ObjectController objectController = offsetObject.GetComponent<ObjectController>();
+        if (objectController == null)
+            return;
+
+        valueChanging = true;
+        transform.position += objectController.offset;
+        camController.SwitchToNext();
+        StartCoroutine(SwitchCooldownRoutine());
+    }
+
+    void GroundCheck()
+    {
+        if (!Physics.Raycast(transform.position, Vector3.down, out hit, 5f))
+            return;
+
+        if (hit.collider.CompareTag("KillVolume"))
+        {
+            transform.position = new Vector3(0f, 3f, 0f);
+            lives--;
+        }
+        else if (hit.collider.CompareTag("Ground"))
+        {
+            offsetObject = hit.collider.gameObject;
+        }
     }
 
     void Move()
     {
-        camValue = cam.GetComponent<CamController>().currentCamera;
-        if (camValue == 0)
-        {
-            MainCam();
-        }
-
-        else if (camValue == 1)
-        {
-            SideCam();
-        }
-
-        else if (camValue == 2)
-        {
-            TopCam();
-        }
+        Vector3 moveDirection = GetMoveDirection(camController.currentCamera, cam.transform, moveInput);
+        ApplyMovement(moveDirection);
     }
 
-    void MainCam()
+    static Vector3 GetMoveDirection(int cameraIndex, Transform cameraTransform, Vector2 input)
     {
-        if (cam.orthographic)
-        {
-            cam.orthographic = false;
-        }
+        Vector3 right = cameraTransform.right;
+        Vector3 forward = cameraIndex == 2 ? cameraTransform.up : cameraTransform.forward;
 
-        localMoveInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-        relativeTransform = cam.transform;
-        rightWorldMovement = relativeTransform.right;
-        forwardWorldMovement = relativeTransform.forward;
+        Vector3 direction = cameraIndex == 1
+            ? right * input.x
+            : right * input.x + forward * input.y;
 
-        moveDirection = Vector3.ClampMagnitude(rightWorldMovement * localMoveInput.x + forwardWorldMovement * localMoveInput.z, 1);
-        moveDirection.y = 0;
-
-        Movement(moveDirection);
+        direction.y = 0f;
+        return Vector3.ClampMagnitude(direction, 1f);
     }
 
-    void SideCam()
+    void ApplyMovement(Vector3 moveDirection)
     {
-        if (!cam.orthographic)
-        {
-            cam.orthographic = true;
-        }
-        localMoveInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-        relativeTransform = cam.transform;
-        rightWorldMovement = relativeTransform.right;
-        moveDirection = Vector3.ClampMagnitude(rightWorldMovement * localMoveInput.x, 1);
-        Movement(moveDirection);
-    }
+        if (moveDirection == Vector3.zero)
+            return;
 
-    void TopCam()
-    {
-        localMoveInput = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-        relativeTransform = cam.transform;
-        rightWorldMovement = relativeTransform.right;
-        forwardWorldMovement = relativeTransform.up;
+        Vector3 delta = moveDirection.normalized * moveSpeed * Time.fixedDeltaTime;
 
-        moveDirection = Vector3.ClampMagnitude(rightWorldMovement * localMoveInput.x + forwardWorldMovement * localMoveInput.z, 1);
-        moveDirection.y = 0;
+        if (rb != null)
+            rb.MovePosition(rb.position + delta);
+        else
+            transform.position += delta;
 
-        Movement(moveDirection);
-    }
-
-    void Movement(Vector3 moveDirection)
-    {
-        transform.position += moveDirection.normalized * moveSpeed * Time.fixedDeltaTime;
-
-        if (moveDirection != Vector3.zero)
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(moveDirection), rotationSpeed * Time.fixedDeltaTime);
+        Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            rotationSpeed * Time.fixedDeltaTime);
     }
 
     void DeathCheck()
     {
         if (lives == 0)
-        {
             SceneManager.LoadScene("EndGame");
-        }
     }
 
-    IEnumerator ChangingValue()
+    IEnumerator SwitchCooldownRoutine()
     {
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(switchCooldown);
         valueChanging = false;
     }
 
-
-    private void OnCollisionEnter(Collision collision)
+    void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("FinalPickup"))
-        {
-            sceneCont.ChangeScene();
-            transform.position = new Vector3(0, 1, 0);
-        }
+        if (!collision.gameObject.CompareTag("FinalPickup"))
+            return;
+
+        if (youWinScreen != null)
+            youWinScreen.SetActive(true);
+
+        sceneCont.ChangeScene();
+        transform.position = new Vector3(0f, 1f, 0f);
     }
 }

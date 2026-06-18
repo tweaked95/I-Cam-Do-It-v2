@@ -1,44 +1,69 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
 
 public class CamController : MonoBehaviour
 {
     public GameObject[] cameraList;
-    public int currentCamera;
+    public int currentCamera { get; private set; }
+
+    public event Action<int> OnCameraChanged;
+
+    Camera outputCamera;
+    int lastAppliedCamera = -1;
+
+    void Awake()
+    {
+        outputCamera = GetComponent<Camera>();
+    }
+
     void Start()
     {
         currentCamera = 0;
         for (int i = 0; i < cameraList.Length; i++)
         {
-            cameraList[0].gameObject.SetActive(false);
+            cameraList[i].SetActive(false);
         }
 
-        if (cameraList.Length > 0)
-        {
-            cameraList[0].gameObject.SetActive(true);
-        }
+        ApplyCamera(currentCamera);
+        OnCameraChanged?.Invoke(currentCamera);
     }
 
-    void Update()
+    public void SwitchToNext()
     {
-        if (currentCamera < cameraList.Length)
+        if (cameraList.Length == 0)
+            return;
+
+        int nextCamera = (currentCamera + 1) % cameraList.Length;
+        SetCamera(nextCamera);
+    }
+
+    public void SetCamera(int index)
+    {
+        if (cameraList.Length == 0)
+            return;
+
+        index = Mathf.Clamp(index, 0, cameraList.Length - 1);
+        if (index == currentCamera && lastAppliedCamera == currentCamera)
+            return;
+
+        currentCamera = index;
+        ApplyCamera(currentCamera);
+        OnCameraChanged?.Invoke(currentCamera);
+    }
+
+    void ApplyCamera(int index)
+    {
+        if (cameraList.Length == 0 || index == lastAppliedCamera)
+            return;
+
+        for (int i = 0; i < cameraList.Length; i++)
         {
-            if (currentCamera == 0)
-            {
-                cameraList[currentCamera].gameObject.SetActive(true);
-            }
-            else
-            {
-                cameraList[currentCamera - 1].gameObject.SetActive(false);
-                cameraList[currentCamera].gameObject.SetActive(true);
-            }
+            cameraList[i].SetActive(i == index);
         }
-        else
-        {
-            currentCamera = 0;
-            cameraList[currentCamera].gameObject.SetActive(true);
-            cameraList[cameraList.Length - 1].gameObject.SetActive(false);
-        }
+
+        if (outputCamera != null)
+            outputCamera.orthographic = index == 1;
+
+        lastAppliedCamera = index;
     }
 }
